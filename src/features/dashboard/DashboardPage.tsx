@@ -126,7 +126,9 @@ export default function DashboardScreen({ chainResult }: { chainResult: ChainRes
                   ["통화", NETWORK.currencySymbol],
                   [
                     "정산 상태",
-                    selectedTxn.status === "frozen" ? "에스크로 보류" : "정산 완료",
+                    selectedTxn.status === "restricted"
+                      ? "HOLD 구매 제한"
+                      : "정산 완료",
                   ],
                   ["내 역할", selectedTxn.role === "voice" ? "보이스" : "크리에이터"],
                 ].map(([label, value]) => (
@@ -140,6 +142,7 @@ export default function DashboardScreen({ chainResult }: { chainResult: ChainRes
               </div>
               <ChainResultPanel
                 result={chainResult}
+                mode="PURCHASE"
                 compact
                 onAppeal={() => {
                   setSelectedTxnIndex(null)
@@ -184,7 +187,7 @@ export default function DashboardScreen({ chainResult }: { chainResult: ChainRes
               생성 기록·증빙 파일 업로드
             </div>
             <p className="text-[10px] text-[#6B7280] mb-5">
-              보류된 금액은 아직 지급되지 않은 컨트랙트 잔액입니다.
+              제출 내용은 HOLD 판정 재검토를 위한 목업 증빙입니다.
             </p>
             <button
               onClick={() => setShowAppeal(false)}
@@ -249,7 +252,7 @@ export default function DashboardScreen({ chainResult }: { chainResult: ChainRes
         <div className="grid grid-cols-3 gap-4 mb-6">
           {[
             ["정산 완료", `${totalEarned} ${NETWORK.currencySymbol}`, "12건"],
-            ["에스크로 보류 중", `10 ${NETWORK.currencySymbol}`, "HOLD 1건"],
+            ["HOLD 구매 제한", "1개 음원", "라이선스 발급 차단"],
             ["검토 중인 트랙", "1개", "기한 예시 14일"],
           ].map(([label, value, sub], i) => (
             <div
@@ -276,13 +279,12 @@ export default function DashboardScreen({ chainResult }: { chainResult: ChainRes
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-white">
-                  HOLD 처리 현황 · Void Echoes
+                  HOLD 검토 현황 · Void Echoes
                 </h3>
                 <Badge variant="warning">유사도 0.91</Badge>
               </div>
               <p className="text-xs text-[#9CA3AF] mt-1">
-                정산 10 {NETWORK.currencySymbol}이 에스크로에 보류되어 검토
-                중입니다.
+                온체인 등록 기록은 유지되며 라이선스 구매·발급이 제한됩니다.
               </p>
             </div>
             <button
@@ -404,7 +406,7 @@ export default function DashboardScreen({ chainResult }: { chainResult: ChainRes
                       <Badge variant="warning">⏳ 검증 중</Badge>
                     )}
                     {t.status === "hold" && (
-                      <Badge variant="warning">정산 대기 중</Badge>
+                      <Badge variant="warning">구매 제한</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5 text-xs text-[#9CA3AF] font-mono">
@@ -460,7 +462,7 @@ export default function DashboardScreen({ chainResult }: { chainResult: ChainRes
                 <Fragment key={`${tx.date}-${tx.buyer}-${i}`}>
                   <tr
                     className={`border-b border-[#21262d] transition-colors ${
-                      tx.status === "frozen"
+                      tx.status === "restricted"
                         ? "bg-amber-500/5"
                         : i === 0 && justBought
                           ? "bg-emerald-500/5"
@@ -500,9 +502,9 @@ export default function DashboardScreen({ chainResult }: { chainResult: ChainRes
                       {tx.split}
                     </td>
                     <td className="px-5 py-3">
-                      {tx.status === "frozen" ? (
+                      {tx.status === "restricted" ? (
                         <span className="text-xs font-mono font-semibold text-amber-400">
-                          ⏸ {tx.earned} 동결
+                          구매 제한
                         </span>
                       ) : (
                         <span className="text-xs font-mono font-semibold text-emerald-400">
@@ -519,13 +521,13 @@ export default function DashboardScreen({ chainResult }: { chainResult: ChainRes
                       >
                         <div
                           className={`text-[10px] font-medium ${
-                            tx.status === "frozen"
+                            tx.status === "restricted"
                               ? "text-orange-400"
                               : "text-emerald-400"
                           }`}
                         >
-                          {tx.status === "frozen"
-                            ? "정산 대기 중"
+                          {tx.status === "restricted"
+                            ? "HOLD 제한"
                             : "정산 완료"}
                         </div>
                         <div className="text-[9px] font-mono text-blue-400 mt-0.5">

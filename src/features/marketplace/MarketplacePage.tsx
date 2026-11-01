@@ -138,7 +138,7 @@ export default function MarketplaceScreen({ setScreen }: { setScreen: (s: Screen
             <b className="text-amber-400">WARN</b> 구매자 확인 필요
           </span>
           <span>
-            <b className="text-orange-400">HOLD</b> 정산 보류(에스크로)
+            <b className="text-orange-400">HOLD</b> 구매·발급 제한
           </span>
           <span className="ml-auto text-right font-mono">
             <span className="block">
@@ -157,7 +157,9 @@ export default function MarketplaceScreen({ setScreen }: { setScreen: (s: Screen
               key={track.id}
               track={track}
               onClick={() => setScreen("detail")}
-              onBuy={() => setScreen("checkout")}
+              onBuy={() => {
+                if (track.status !== "hold") setScreen("checkout")
+              }}
             />
           ))}
         </div>

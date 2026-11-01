@@ -3,6 +3,9 @@ export const THRESHOLD = {
   hold: 0.9,
 } as const
 
+export const HOLD_POLICY: "ONCHAIN_RECORD" | "BLOCK_BEFORE_REGISTER" =
+  "ONCHAIN_RECORD"
+
 export const AI_POLICY = {
   model: "LAION-CLAP",
   embeddingDimensions: 512,

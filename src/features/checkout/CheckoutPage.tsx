@@ -26,6 +26,7 @@ export default function CheckoutScreen({
   }
 
   const handleConfirm = () => {
+    if (chainResult.aiStatus === "HOLD") return
     setStage("signing")
     setTimeout(() => setStage("confirmed"), 2200)
   }
@@ -38,10 +39,8 @@ export default function CheckoutScreen({
             <div className="mb-5 flex items-start justify-between">
               <div>
                 <h3 className="text-base font-semibold text-white">
-                  {chainResult.mintStatus === "success"
-                    ? chainResult.isHold
-                      ? "구매 완료 · 정산 대기 중"
-                      : "구매 및 민팅 완료"
+                  {chainResult.transactionStatus === "SUCCESS"
+                    ? "구매 및 라이선스 발급 완료"
                     : "구매 처리 결과"}
                 </h3>
                 <p className="mt-1 text-xs text-[#9CA3AF]">
@@ -57,9 +56,11 @@ export default function CheckoutScreen({
             </div>
             <ChainResultPanel
               result={chainResult}
+              mode="PURCHASE"
               onRetry={() => setStage("summary")}
             />
-            {chainResult.mintStatus === "success" && (
+            {chainResult.transactionStatus === "SUCCESS" &&
+              chainResult.aiStatus !== "HOLD" && (
               <button
                 onClick={() => setScreen("certificate")}
                 className="mt-4 w-full rounded-xl bg-blue-500 py-2.5 text-sm font-semibold text-white hover:bg-blue-600"
@@ -122,14 +123,14 @@ export default function CheckoutScreen({
             </h2>
           </div>
 
-          {chainResult.isHold && (
+          {chainResult.aiStatus === "HOLD" && (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
               <div className="text-xs font-semibold text-amber-400">
-                HOLD · 정산 보류 안내
+                HOLD · 구매 제한
               </div>
               <p className="mt-1 text-xs leading-relaxed text-[#9CA3AF]">
-                이 곡은 유사도 검토 중입니다. 결제 금액은 에스크로에 보관되며,
-                검토 결과에 따라 정산됩니다.
+                이 곡은 유사도 검토 대상입니다. 라이선스 구매·발급 요청은
+                전송되지 않습니다.
               </p>
             </div>
           )}
@@ -159,13 +160,13 @@ export default function CheckoutScreen({
                 <div className="flex items-center gap-2">
                   <Badge
                     variant={
-                      chainResult.riskVerdict === "WARN" ||
-                      chainResult.riskVerdict === "HOLD"
+                      chainResult.aiStatus === "WARN" ||
+                      chainResult.aiStatus === "HOLD"
                         ? "warning"
                         : "verified"
                     }
                   >
-                    {chainResult.riskVerdict} · 유사도{" "}
+                    {chainResult.aiStatus} · 유사도{" "}
                     {chainResult.similarityScore?.toFixed(2) ?? "—"}
                   </Badge>
                 </div>
@@ -411,12 +412,14 @@ export default function CheckoutScreen({
             {stage === "summary" && (
               <button
                 onClick={handleConfirm}
-                className="w-full py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                disabled={chainResult.aiStatus === "HOLD"}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-[#21262d] disabled:text-[#6B7280]"
               >
-                <span>{paymentMethod === "google" ? "🔵" : "🦊"}</span>
-                {paymentMethod === "google"
-                  ? "Google 계정으로 결제"
-                  : "MetaMask로 결제"}
+                {chainResult.aiStatus === "HOLD"
+                  ? "HOLD · 구매 제한"
+                  : paymentMethod === "google"
+                    ? "Google 계정으로 결제"
+                    : "MetaMask로 결제"}
               </button>
             )}
             {stage === "signing" && (
@@ -434,25 +437,41 @@ export default function CheckoutScreen({
             )}
             {stage === "confirmed" && (
               <div className="space-y-3">
-                <div className="w-full py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex items-center justify-center gap-2">
-                  <span className="text-emerald-400">✓</span>
-                  <span className="text-sm text-emerald-400 font-semibold">
-                    결제 및 트랜잭션 완료
+                <div
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl border py-3 ${
+                    chainResult.transactionStatus === "SUCCESS"
+                      ? "border-emerald-500/30 bg-emerald-500/5"
+                      : "border-red-500/30 bg-red-500/5"
+                  }`}
+                >
+                  <span
+                    className={`text-sm font-semibold ${
+                      chainResult.transactionStatus === "SUCCESS"
+                        ? "text-emerald-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {chainResult.transactionStatus === "SUCCESS"
+                      ? "결제 및 라이선스 발급 완료"
+                      : "구매 처리 결과 확인"}
                   </span>
                 </div>
-                <button
-                  onClick={() => setScreen("certificate")}
-                  className="w-full py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors"
-                >
-                  라이선스 영수증 보기 →
-                </button>
+                {chainResult.transactionStatus === "SUCCESS" &&
+                  chainResult.aiStatus !== "HOLD" && (
+                    <button
+                      onClick={() => setScreen("certificate")}
+                      className="w-full py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors"
+                    >
+                      라이선스 영수증 보기 →
+                    </button>
+                  )}
               </div>
             )}
 
             <div className="pt-2 space-y-2">
               {[
                 ["🔒", "스마트 컨트랙트 자동 정산"],
-                ["📄", "ERC-1155 라이선스 NFT 즉시 발급"],
+                ["📄", "ERC-1155 라이선스 발급 결과 확인"],
                 ["🛡️", "AI 독창성 검증 완료 음원만 거래"],
               ].map(([icon, text]) => (
                 <div

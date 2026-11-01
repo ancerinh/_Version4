@@ -270,7 +270,7 @@ function AIPassView({
             onClick={onSign}
             className="flex-1 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
           >
-            <span>🦊</span> MetaMask에서 서명 후 Mint →
+            MetaMask에서 서명 후 온체인 등록 →
           </button>
         </div>
       </div>
@@ -303,7 +303,7 @@ function AIFailView({ onReset }: { onReset: () => void }) {
                 gatekeeper-v2.1 · 2026-01-13 09:21:44 UTC
               </div>
             </div>
-            <Badge variant="danger">BLOCK · 민팅 거부</Badge>
+            <Badge variant="danger">BLOCK · 등록 거부</Badge>
           </div>
           <div className="p-6 space-y-5">
             <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
@@ -315,7 +315,7 @@ function AIFailView({ onReset }: { onReset: () => void }) {
                 <span className="text-white font-mono">
                   "Solar Wind" (Suno v4.5)
                 </span>
-                과 동일한 오디오 지문이 확인되어 민팅이 거부되었습니다.
+                과 동일한 오디오 지문이 확인되어 등록이 거부되었습니다.
                 원작자이거나 사용 허가를 받은 경우 증빙과 함께 이의를 제기할 수
                 있습니다.
               </div>
@@ -472,7 +472,7 @@ export default function UploadScreen({ chainResult }: { chainResult: ChainResult
           </p>
         </div>
         <div className="flex items-center mb-8">
-          {["파일 업로드", "AI 유사도 검증", "온체인 Mint"].map((step, i) => (
+          {["파일 업로드", "AI 유사도 검증", "온체인 등록"].map((step, i) => (
             <div key={step} className="flex items-center flex-1">
               {i > 0 && <div className="flex-1 h-px bg-[#21262d]"></div>}
               <div className="flex items-center gap-2 px-2">
@@ -827,7 +827,7 @@ export default function UploadScreen({ chainResult }: { chainResult: ChainResult
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-sm font-semibold text-white">
-                  검증·민팅 파이프라인
+                  검증·등록 파이프라인
                 </h3>
                 <p className="text-[10px] text-[#9CA3AF] mt-0.5">
                   제출 후 단계별 상태와 온체인 확정을 실시간으로 확인합니다.
@@ -855,7 +855,7 @@ export default function UploadScreen({ chainResult }: { chainResult: ChainResult
                 "L2 CLAP",
                 "EIP-712 서명",
                 "컨트랙트 검증",
-                "민팅 · IPFS",
+                "온체인 등록 · IPFS",
               ].map((item, i) => (
                 <div
                   key={item}
@@ -977,7 +977,7 @@ export default function UploadScreen({ chainResult }: { chainResult: ChainResult
           >
             {failDemo
               ? "AI 검증 시작 (동일 지문 BLOCK 시뮬레이션)"
-              : "AI 검증 후 온체인 Mint"}
+              : "AI 검증 후 온체인 등록"}
           </button>
         </div>
       </div>
@@ -1004,9 +1004,10 @@ export default function UploadScreen({ chainResult }: { chainResult: ChainResult
           <div className="max-h-[88vh] w-[700px] overflow-y-auto rounded-2xl border border-[#30363d] bg-[#161b22] p-6 shadow-2xl">
             <div
               className={`w-14 h-14 rounded-full border flex items-center justify-center mx-auto mb-4 ${
-                chainResult.mintStatus === "rejected"
+                chainResult.transactionStatus === "CONTRACT_REJECTED" ||
+                chainResult.transactionStatus === "ERROR"
                   ? "bg-red-500/10 border-red-500/20"
-                  : chainResult.isHold
+                  : chainResult.aiStatus === "HOLD"
                     ? "bg-amber-500/10 border-amber-500/20"
                     : "bg-emerald-500/10 border-emerald-500/20"
               }`}
@@ -1015,9 +1016,10 @@ export default function UploadScreen({ chainResult }: { chainResult: ChainResult
                 <path
                   d="M5 13L9 17L19 7"
                   stroke={
-                    chainResult.mintStatus === "rejected"
+                    chainResult.transactionStatus === "CONTRACT_REJECTED" ||
+                    chainResult.transactionStatus === "ERROR"
                       ? "#ef4444"
-                      : chainResult.isHold
+                      : chainResult.aiStatus === "HOLD"
                         ? "#f59e0b"
                         : "#10b981"
                   }
@@ -1029,17 +1031,20 @@ export default function UploadScreen({ chainResult }: { chainResult: ChainResult
             </div>
             <div className="mb-5 text-center">
               <h3 className="text-base font-semibold text-white">
-                {chainResult.mintStatus === "rejected"
+                {chainResult.transactionStatus === "CONTRACT_REJECTED" ||
+                chainResult.transactionStatus === "ERROR"
                   ? "음원 등록 실패"
-                  : chainResult.isHold
-                    ? "등록 완료 (정산 대기 중)"
+                  : chainResult.aiStatus === "HOLD"
+                    ? chainResult.onchainTrackId !== undefined
+                      ? "HOLD 기록 완료 · 구매 제한"
+                      : "HOLD · 등록 보류"
                     : "음원 등록 완료"}
               </h3>
               <p className="mt-1 text-sm text-[#9CA3AF]">
-                {NETWORK.name} ERC-1155 민팅 상태를 확인하세요.
+                {NETWORK.name} 음원 등록 상태를 확인하세요.
               </p>
             </div>
-            <ChainResultPanel result={chainResult} />
+            <ChainResultPanel result={chainResult} mode="REGISTER" />
             <button
               onClick={handleReset}
               className="mt-5 w-full py-2.5 rounded-xl bg-[#1c2128] hover:bg-[#21262d] border border-[#30363d] text-white text-sm font-medium transition-colors"
