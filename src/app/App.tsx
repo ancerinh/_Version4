@@ -6,8 +6,12 @@ import DetailScreen from "../features/track-detail/TrackDetailPage"
 import DashboardScreen from "../features/dashboard/DashboardPage"
 import CheckoutScreen from "../features/checkout/CheckoutPage"
 import CertificateScreen from "../features/certificate/CertificatePage"
-import { SCENARIOS, type ScenarioId } from "../features/chain-result/scenarios"
-import type { Screen } from "../shared/types/domain"
+import {
+  resolveConfirmingPurchase,
+  SCENARIOS,
+  type ScenarioId,
+} from "../features/chain-result/scenarios"
+import type { ChainResult, Screen } from "../shared/types/domain"
 
 // ─── App Root ───────────────────────────────────────────────────────────────────
 export default function App() {
@@ -16,8 +20,23 @@ export default function App() {
   const [showWalletModal, setShowWalletModal] = useState(false)
   const [showHowItWorks, setShowHowItWorks] = useState(false)
   const [scenario, setScenario] = useState<ScenarioId>("success-pass")
+  const [chainResult, setChainResult] = useState<ChainResult>(
+    SCENARIOS["success-pass"].result,
+  )
   const [scenarioPanelOpen, setScenarioPanelOpen] = useState(true)
-  const chainResult = SCENARIOS[scenario].result
+
+  const selectScenario = (id: ScenarioId) => {
+    setScenario(id)
+    setChainResult(SCENARIOS[id].result)
+  }
+
+  const recheckPurchaseResult = () => {
+    setChainResult((current) => resolveConfirmingPurchase(current))
+  }
+  const scenarioLabel =
+    scenario === "confirming" && chainResult.purchaseStatus === "SUCCESS"
+      ? "구매 확인 완료 (재확인)"
+      : SCENARIOS[scenario].label
 
   return (
     <div className="min-h-screen bg-[#0d1117]">
@@ -36,9 +55,18 @@ export default function App() {
       {screen === "detail" && (
         <DetailScreen setScreen={setScreen} chainResult={chainResult} />
       )}
-      {screen === "dashboard" && <DashboardScreen chainResult={chainResult} />}
+      {screen === "dashboard" && (
+        <DashboardScreen
+          chainResult={chainResult}
+          onRecheckResult={recheckPurchaseResult}
+        />
+      )}
       {screen === "checkout" && (
-        <CheckoutScreen setScreen={setScreen} chainResult={chainResult} />
+        <CheckoutScreen
+          setScreen={setScreen}
+          chainResult={chainResult}
+          onRecheckResult={recheckPurchaseResult}
+        />
       )}
       {screen === "certificate" && (
         <CertificateScreen
@@ -58,7 +86,7 @@ export default function App() {
               Demo · Chain scenarios
             </span>
             <span className="mt-0.5 block text-[10px] text-[#9CA3AF]">
-              현재: {SCENARIOS[scenario].label}
+              현재: {scenarioLabel}
             </span>
           </span>
           <span className="text-xs text-[#9CA3AF]">
@@ -75,7 +103,7 @@ export default function App() {
                 <button
                   type="button"
                   key={id}
-                  onClick={() => setScenario(id)}
+                  onClick={() => selectScenario(id)}
                   className={`rounded-lg border px-2.5 py-2 text-left text-[10px] leading-tight transition-colors ${
                     scenario === id
                       ? "border-blue-500 bg-blue-500/15 text-white"

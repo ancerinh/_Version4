@@ -5,6 +5,7 @@ export type ScenarioId =
   | "checking"
   | "success-pass"
   | "success-warn"
+  | "confirming"
   | "hold"
   | "invalid-signature"
   | "duplicate-fingerprint"
@@ -16,6 +17,8 @@ const registrationTxHash =
   "0x7d2f34e9c2a81b47673f15ad1280d94e42bf1559ef77a422bd7314a8c921a91c"
 const purchaseTxHash =
   "0x6b8d11a495af0c90e6d88ca498dba07ca2de4718060ef31fe17eb5bfa371db83"
+const confirmingPurchaseTxHash =
+  "0xc74a11e495af0c90e6d88ca498dba07ca2de4718060ef31fe17eb5bfa371ce52"
 const holdIsRecorded = HOLD_POLICY === "ONCHAIN_RECORD"
 
 export const SCENARIOS: Record<
@@ -27,8 +30,10 @@ export const SCENARIOS: Record<
     result: {
       aiStatus: "ANALYZING",
       eip712Status: "NOT_REQUESTED",
-      txPhase: "PRE_SUBMISSION",
-      transactionStatus: "NOT_SENT",
+      registrationTxPhase: "PRE_SUBMISSION",
+      registrationStatus: "NOT_SENT",
+      purchaseTxPhase: "PRE_SUBMISSION",
+      purchaseStatus: "NOT_SENT",
     },
   },
   "success-pass": {
@@ -36,12 +41,14 @@ export const SCENARIOS: Record<
     result: {
       aiStatus: "PASS",
       eip712Status: "VERIFIED",
-      txPhase: "POST_SUBMISSION",
-      transactionStatus: "SUCCESS",
+      registrationTxPhase: "POST_SUBMISSION",
+      registrationStatus: "SUCCESS",
+      purchaseTxPhase: "POST_SUBMISSION",
+      purchaseStatus: "SUCCESS",
       registrationTxHash,
       purchaseTxHash,
       onchainTrackId: 1247,
-      tokenId: 3891,
+      tokenId: 1247,
       similarityScore: 0.31,
     },
   },
@@ -50,15 +57,32 @@ export const SCENARIOS: Record<
     result: {
       aiStatus: "WARN",
       eip712Status: "VERIFIED",
-      txPhase: "POST_SUBMISSION",
-      transactionStatus: "SUCCESS",
+      registrationTxPhase: "POST_SUBMISSION",
+      registrationStatus: "SUCCESS",
+      purchaseTxPhase: "POST_SUBMISSION",
+      purchaseStatus: "SUCCESS",
       registrationTxHash:
         "0x83dfe4a495af0c90e6d88ca498dba07ca2de4718060ef31fe17eb5bfa371aa12",
       purchaseTxHash:
         "0x923b4fa9c2a81b47673f15ad1280d94e42bf1559ef77a422bd7314a8c921bc41",
       onchainTrackId: 1248,
-      tokenId: 3892,
+      tokenId: 1248,
       similarityScore: 0.84,
+    },
+  },
+  confirming: {
+    label: "구매 확인 대기 (PASS)",
+    result: {
+      aiStatus: "PASS",
+      eip712Status: "VERIFIED",
+      registrationTxPhase: "POST_SUBMISSION",
+      registrationStatus: "SUCCESS",
+      purchaseTxPhase: "POST_SUBMISSION",
+      purchaseStatus: "CONFIRMING",
+      registrationTxHash,
+      purchaseTxHash: confirmingPurchaseTxHash,
+      onchainTrackId: 1247,
+      similarityScore: 0.31,
     },
   },
   hold: {
@@ -68,8 +92,12 @@ export const SCENARIOS: Record<
     result: {
       aiStatus: "HOLD",
       eip712Status: holdIsRecorded ? "VERIFIED" : "NOT_REQUESTED",
-      txPhase: holdIsRecorded ? "POST_SUBMISSION" : "PRE_SUBMISSION",
-      transactionStatus: holdIsRecorded ? "SUCCESS" : "NOT_SENT",
+      registrationTxPhase: holdIsRecorded
+        ? "POST_SUBMISSION"
+        : "PRE_SUBMISSION",
+      registrationStatus: holdIsRecorded ? "SUCCESS" : "POLICY_BLOCKED",
+      purchaseTxPhase: "PRE_SUBMISSION",
+      purchaseStatus: "POLICY_BLOCKED",
       ...(holdIsRecorded
         ? {
             registrationTxHash:
@@ -77,6 +105,8 @@ export const SCENARIOS: Record<
             onchainTrackId: 1249,
           }
         : {}),
+      failureReason: "HOLD_PURCHASE_RESTRICTED",
+      failureTarget: "PURCHASE",
       similarityScore: 0.93,
     },
   },
@@ -85,9 +115,12 @@ export const SCENARIOS: Record<
     result: {
       aiStatus: "PASS",
       eip712Status: "FAILED",
-      txPhase: "PRE_SUBMISSION",
-      transactionStatus: "NOT_SENT",
+      registrationTxPhase: "PRE_SUBMISSION",
+      registrationStatus: "NOT_SENT",
+      purchaseTxPhase: "PRE_SUBMISSION",
+      purchaseStatus: "NOT_SENT",
       failureReason: "AI_SIGNATURE_MISMATCH",
+      failureTarget: "BOTH",
       similarityScore: 0.31,
     },
   },
@@ -96,9 +129,12 @@ export const SCENARIOS: Record<
     result: {
       aiStatus: "BLOCK",
       eip712Status: "NOT_REQUESTED",
-      txPhase: "PRE_SUBMISSION",
-      transactionStatus: "CONTRACT_REJECTED",
+      registrationTxPhase: "PRE_SUBMISSION",
+      registrationStatus: "POLICY_BLOCKED",
+      purchaseTxPhase: "PRE_SUBMISSION",
+      purchaseStatus: "POLICY_BLOCKED",
       failureReason: "DUPLICATE_FINGERPRINT",
+      failureTarget: "REGISTER",
     },
   },
   "wallet-rejected": {
@@ -106,9 +142,12 @@ export const SCENARIOS: Record<
     result: {
       aiStatus: "PASS",
       eip712Status: "VERIFIED",
-      txPhase: "PRE_SUBMISSION",
-      transactionStatus: "USER_CANCELLED",
+      registrationTxPhase: "POST_SUBMISSION",
+      registrationStatus: "SUCCESS",
+      purchaseTxPhase: "PRE_SUBMISSION",
+      purchaseStatus: "USER_CANCELLED",
       failureReason: "USER_CANCELLED",
+      failureTarget: "PURCHASE",
       registrationTxHash,
       onchainTrackId: 1247,
       similarityScore: 0.31,
@@ -119,11 +158,14 @@ export const SCENARIOS: Record<
     result: {
       aiStatus: "PASS",
       eip712Status: "VERIFIED",
-      txPhase: "POST_SUBMISSION",
-      transactionStatus: "CONTRACT_REJECTED",
+      registrationTxPhase: "POST_SUBMISSION",
+      registrationStatus: "SUCCESS",
+      purchaseTxPhase: "POST_SUBMISSION",
+      purchaseStatus: "CONTRACT_REJECTED",
       failureReason: "PAYMENT_AMOUNT_MISMATCH",
+      failureTarget: "PURCHASE",
       failureDetail:
-        "execution reverted: TrackLicense__PaymentAmountMismatch()",
+        "execution reverted: IncorrectPayment(expected: 50000000000000000000, actual: 49000000000000000000)",
       registrationTxHash,
       purchaseTxHash:
         "0xa91be7e0b2d85f36a1c7e92d0f4b8a6153ce07d9b2a8f41e6d305b9c7a12d321",
@@ -136,9 +178,22 @@ export const SCENARIOS: Record<
     result: {
       aiStatus: "ERROR",
       eip712Status: "NOT_REQUESTED",
-      txPhase: "PRE_SUBMISSION",
-      transactionStatus: "ERROR",
+      registrationTxPhase: "PRE_SUBMISSION",
+      registrationStatus: "ERROR",
+      purchaseTxPhase: "PRE_SUBMISSION",
+      purchaseStatus: "ERROR",
       failureReason: "SERVER_ERROR",
+      failureTarget: "BOTH",
     },
   },
+}
+
+export function resolveConfirmingPurchase(result: ChainResult): ChainResult {
+  if (result.purchaseStatus !== "CONFIRMING") return result
+
+  return {
+    ...result,
+    purchaseStatus: "SUCCESS",
+    tokenId: result.onchainTrackId,
+  }
 }

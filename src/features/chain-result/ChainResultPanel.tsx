@@ -71,6 +71,7 @@ const TRANSACTION_LABELS: Record<TransactionStatus, string> = {
   SUBMITTED: "전송됨",
   CONFIRMING: "확인 대기",
   SUCCESS: "성공",
+  POLICY_BLOCKED: "정책상 진행 제한",
   USER_CANCELLED: "사용자 취소",
   CONTRACT_REJECTED: "계약 거부",
   ERROR: "오류",
@@ -124,44 +125,39 @@ export default function ChainResultPanel({
   mode,
   compact = false,
   onRetry,
+  onRecheck,
   onAppeal,
 }: {
   result: ChainResult
   mode: ChainResultMode
   compact?: boolean
   onRetry?: () => void
+  onRecheck?: () => void
   onAppeal?: () => void
 }) {
   const [copied, setCopied] = useState(false)
   const [showTransaction, setShowTransaction] = useState(false)
   const isHold = result.aiStatus === "HOLD"
-  const purchaseRestricted = mode === "PURCHASE" && isHold
+  const transactionStatus =
+    mode === "REGISTER" ? result.registrationStatus : result.purchaseStatus
+  const transactionPhase =
+    mode === "REGISTER"
+      ? result.registrationTxPhase
+      : result.purchaseTxPhase
   const hasPreviousRegistration =
     mode === "PURCHASE" &&
+    result.registrationStatus === "SUCCESS" &&
+    result.registrationTxPhase === "POST_SUBMISSION" &&
     result.registrationTxHash !== undefined &&
     result.onchainTrackId !== undefined
-  const registrationAlreadySucceeded =
-    mode === "REGISTER" &&
-    result.registrationTxHash !== undefined &&
-    result.onchainTrackId !== undefined
-  const transactionStatus = purchaseRestricted
-    ? "CONTRACT_REJECTED"
-    : registrationAlreadySucceeded
-      ? "SUCCESS"
-      : result.transactionStatus
-  const transactionPhase = purchaseRestricted
-    ? "PRE_SUBMISSION"
-    : registrationAlreadySucceeded
-      ? "POST_SUBMISSION"
-      : result.txPhase
-  const failureReason = purchaseRestricted
-    ? "HOLD_PURCHASE_RESTRICTED"
-    : registrationAlreadySucceeded
-      ? undefined
-      : result.failureReason
+  const failureReason =
+    result.failureTarget === "BOTH" || result.failureTarget === mode
+      ? result.failureReason
+      : undefined
   const reason = failureReason ? FAILURE_MESSAGES[failureReason] : null
-  const hash =
+  const modeHash =
     mode === "REGISTER" ? result.registrationTxHash : result.purchaseTxHash
+  const hash = transactionPhase === "POST_SUBMISSION" ? modeHash : undefined
   const shortenedHash = hash ? `${hash.slice(0, 10)}…${hash.slice(-8)}` : "—"
   const score =
     result.similarityScore === undefined
@@ -181,6 +177,8 @@ export default function ChainResultPanel({
       : transactionStatus === "CONTRACT_REJECTED" ||
           transactionStatus === "ERROR"
         ? "red"
+        : transactionStatus === "POLICY_BLOCKED"
+          ? "orange"
         : transactionStatus === "USER_CANCELLED"
           ? "gray"
           : "blue"
@@ -244,7 +242,7 @@ export default function ChainResultPanel({
             {transactionStatus === "CONFIRMING" && (
               <button
                 type="button"
-                onClick={onRetry}
+                onClick={onRecheck}
                 className="rounded border border-blue-500/30 px-2 py-1 text-[9px] text-blue-400 hover:bg-blue-500/10"
               >
                 결과 재확인
@@ -264,6 +262,8 @@ export default function ChainResultPanel({
                   ? "green"
                   : transactionStatus === "CONTRACT_REJECTED"
                     ? "red"
+                    : transactionStatus === "POLICY_BLOCKED"
+                      ? "orange"
                     : "gray"
               }
             >
@@ -271,6 +271,8 @@ export default function ChainResultPanel({
                 ? "✓ Mint Success"
                 : transactionStatus === "CONTRACT_REJECTED"
                   ? "× Mint Rejected"
+                  : transactionStatus === "POLICY_BLOCKED"
+                    ? "정책상 발급 제한"
                   : "미확정"}
             </ValueBadge>
           </PanelRow>
@@ -371,7 +373,8 @@ export default function ChainResultPanel({
           </PanelRow>
         ) : (
           <PanelRow label="Token ID" description="발급된 ERC-1155 라이선스 ID">
-            {result.tokenId !== undefined && !purchaseRestricted ? (
+            {result.tokenId !== undefined &&
+            transactionStatus === "SUCCESS" ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono text-white">
                   #{result.tokenId}

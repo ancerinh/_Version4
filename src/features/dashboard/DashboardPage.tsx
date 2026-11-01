@@ -6,7 +6,13 @@ import { NETWORK } from "../../shared/config/network"
 import type { ChainResult } from "../../shared/types/domain"
 import { initialTxns, myTracks } from "./mockDashboard"
 
-export default function DashboardScreen({ chainResult }: { chainResult: ChainResult }) {
+export default function DashboardScreen({
+  chainResult,
+  onRecheckResult,
+}: {
+  chainResult: ChainResult
+  onRecheckResult: () => void
+}) {
   const [totalEarned, setTotalEarned] = useState(594)
   const [txns, setTxns] = useState(initialTxns)
   const [animated, setAnimated] = useState(false)
@@ -144,6 +150,7 @@ export default function DashboardScreen({ chainResult }: { chainResult: ChainRes
                 result={chainResult}
                 mode="PURCHASE"
                 compact
+                onRecheck={onRecheckResult}
                 onAppeal={() => {
                   setSelectedTxnIndex(null)
                   setShowAppeal(true)

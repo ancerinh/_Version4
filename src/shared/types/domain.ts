@@ -21,6 +21,7 @@ export type TransactionStatus =
   | "SUBMITTED"
   | "CONFIRMING"
   | "SUCCESS"
+  | "POLICY_BLOCKED"
   | "USER_CANCELLED"
   | "CONTRACT_REJECTED"
   | "ERROR"
@@ -38,9 +39,12 @@ export type FailureReason =
 export interface ChainResult {
   aiStatus: AIStatus
   eip712Status: Eip712Status
-  txPhase: TxPhase
-  transactionStatus: TransactionStatus
+  registrationTxPhase: TxPhase
+  registrationStatus: TransactionStatus
+  purchaseTxPhase: TxPhase
+  purchaseStatus: TransactionStatus
   failureReason?: FailureReason
+  failureTarget?: "REGISTER" | "PURCHASE" | "BOTH"
   failureDetail?: string
   registrationTxHash?: string
   purchaseTxHash?: string

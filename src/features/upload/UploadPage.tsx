@@ -1004,8 +1004,8 @@ export default function UploadScreen({ chainResult }: { chainResult: ChainResult
           <div className="max-h-[88vh] w-[700px] overflow-y-auto rounded-2xl border border-[#30363d] bg-[#161b22] p-6 shadow-2xl">
             <div
               className={`w-14 h-14 rounded-full border flex items-center justify-center mx-auto mb-4 ${
-                chainResult.transactionStatus === "CONTRACT_REJECTED" ||
-                chainResult.transactionStatus === "ERROR"
+                chainResult.registrationStatus === "CONTRACT_REJECTED" ||
+                chainResult.registrationStatus === "ERROR"
                   ? "bg-red-500/10 border-red-500/20"
                   : chainResult.aiStatus === "HOLD"
                     ? "bg-amber-500/10 border-amber-500/20"
@@ -1016,8 +1016,8 @@ export default function UploadScreen({ chainResult }: { chainResult: ChainResult
                 <path
                   d="M5 13L9 17L19 7"
                   stroke={
-                    chainResult.transactionStatus === "CONTRACT_REJECTED" ||
-                    chainResult.transactionStatus === "ERROR"
+                    chainResult.registrationStatus === "CONTRACT_REJECTED" ||
+                    chainResult.registrationStatus === "ERROR"
                       ? "#ef4444"
                       : chainResult.aiStatus === "HOLD"
                         ? "#f59e0b"
@@ -1031,8 +1031,8 @@ export default function UploadScreen({ chainResult }: { chainResult: ChainResult
             </div>
             <div className="mb-5 text-center">
               <h3 className="text-base font-semibold text-white">
-                {chainResult.transactionStatus === "CONTRACT_REJECTED" ||
-                chainResult.transactionStatus === "ERROR"
+                {chainResult.registrationStatus === "CONTRACT_REJECTED" ||
+                chainResult.registrationStatus === "ERROR"
                   ? "음원 등록 실패"
                   : chainResult.aiStatus === "HOLD"
                     ? chainResult.onchainTrackId !== undefined
